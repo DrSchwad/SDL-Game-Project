@@ -1,4 +1,9 @@
+#include <iostream>
+#include <fstream>
+#include <sstream>
 #include <string>
+#include <vector>
+#include <algorithm>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
@@ -7,8 +12,10 @@
 #include "InitializeAssets.h"
 #include "Controller.h"
 
-int main( int argc, char* args[] ) {
-	// Start up SDL and create window
+int main( int argc, char* asrgs[] ) {
+	freopen("logs.txt", "w", stdout);
+
+	// Start up SDL and create windows
 	if(!init()) {
 		printf("Failed to initialize!\n");
 	}

@@ -48,6 +48,9 @@ bool init() {
 				//Initialize renderer color
 				SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
 
+				// Enable alpha values for color
+				SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);
+
 				//Initialize PNG loading
 				int imgFlags = IMG_INIT_PNG;
 				if( !( IMG_Init( imgFlags ) & imgFlags ) )

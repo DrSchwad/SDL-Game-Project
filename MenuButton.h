@@ -13,7 +13,6 @@ class MenuButton {
 		void renderHighlighter();
 		void resetHighlighter();
 		void close();
-		bool backToMenu();
 	private:
 		LTexture buttonTextTexture;
 		int posX, posY;

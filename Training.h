@@ -1,8 +1,3 @@
-#include "Hero.h"
-
-LTexture groundMiddle;
-LTexture trainingBackground;
-
 class Training {
 	public:
 		Training();
@@ -14,21 +9,21 @@ class Training {
 		int offsetX, deltaX;
 		bool goBackToMenu;
 	private:
-		Hero hero;
+		Map map;
 };
 
 Training::Training() {
 	offsetX = SCREEN_WIDTH / 2;
 	deltaX = 0;
 	goBackToMenu = false;
-	hero = Hero();
+	map = Map("training", -1, {{RECTANGULAR_BOX, 0, -60, 0, 0}}, {0xD6, 0xE6, 0xF1, 0xFF});
+	map.setBackground();
 }
 
 bool Training::loadMedia() {
 	bool success = true;
-	if (!groundMiddle.loadFromFile("sprites/ground middle.png")) success = false;
-	if (!trainingBackground.loadFromFile("sprites/Training Background.png")) success = false;
-	if (!hero.loadMedia()) success = false;
+	if (!map.loadMedia()) success = false;
+
 	return success;
 }
 
@@ -37,25 +32,24 @@ void Training::handleEvent(SDL_Event &e) {
 		switch( e.key.keysym.sym ) {
 			case SDLK_ESCAPE:
 				goBackToMenu = true;
+			default:
+				map.handleEvent(e);
+		}
+	}
+
+	if (e.type == SDL_KEYUP) {
+		switch( e.key.keysym.sym ) {
+			case SDLK_ESCAPE:
+				break;
+			default:
+				map.handleEvent(e);
 		}
 	}
 }
 
 void Training::render() {
-	// Render background
-	trainingBackground.render(offsetX, SCREEN_HEIGHT - trainingBackground.getHeight());
-	trainingBackground.render(offsetX + trainingBackground.getWidth(), SCREEN_HEIGHT - trainingBackground.getHeight());
-
-	// // Render grass
-	// int atX = offsetX;
-	// while (atX < SCREEN_WIDTH + offsetX) {
-	// 	groundMiddle.render(atX, SCREEN_HEIGHT - groundMiddle.getHeight());
-	// 	atX += groundMiddle.getWidth();
-	// }
-
-	// Render hero
-	hero.renderShadow();
-	hero.render(offsetX, 60);
+	map.move();
+	map.render(offsetX);
 }
 
 void Training::close() {

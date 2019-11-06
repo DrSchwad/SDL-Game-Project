@@ -72,10 +72,6 @@ bool LTexture::loadFromFile( std::string path)
 	}
 	else
 	{
-		//Color key image
-		// if (colorKeyR >= 0 && colorKeyG >= 0 && colorKeyB >= 0)
-		// 	SDL_SetColorKey( loadedSurface, SDL_TRUE, SDL_MapRGB( loadedSurface->format , colorKeyR, colorKeyG, colorKeyB ) );
-
 		//Create texture from surface pixels
         newTexture = SDL_CreateTextureFromSurface( gRenderer, loadedSurface );
 		if( newTexture == NULL )
