@@ -1,6 +1,9 @@
 #include "SettingsOption.h"
+#include "SettingsHeader.h"
+#include "SettingsTextField.h"
 
-const int SETTINGS_FONT_SIZE = 28;
+const int SETTINGS_HEADER_FONT_SIZE = 20;
+const int OPTIONS_FONT_SIZE = 28;
 const int OPTIONS_START_X = 220, OPTIONS_START_Y = 220;
 const int OPTIONS_HEIGHT = 50;
 
@@ -29,12 +32,15 @@ class Settings {
 		bool goBackToMenu;
 	private:
 		LTexture settingsTexture;
+		SettingsHeader settingsHeader[2];
+		SettingsTextField settingsTextField;
 		SettingsOption settingsOptions[TOTAL_KEYS];
 		SettingsKey currentSelectedOption;
 		SettingsKey enteredOption;
 		void renderSettingsBackground();
 		void renderOptionHighlighter();
 		void resetOptionHighlighter();
+		void renderThinBorder();
 };
 
 Settings::Settings() {
@@ -43,6 +49,12 @@ Settings::Settings() {
 	currentSelectedOption = UP_KEY;
 	enteredOption = TOTAL_KEYS;
 	goBackToMenu = false;
+
+	settingsTextField.setBackgroundColor({});
+	settingsTextField.setTextColor({});
+	settingsTextField.setHintTextColor({0xCC, });
+	settingsTextField.setHintText("Enter your name");
+	settingsTextField.setPosition(int x, int y);
 }
 
 std::vector<int> Settings::getKeys() {
@@ -75,10 +87,18 @@ bool Settings::loadMedia() {
 	bool success = true;
 
 	// Open the font
-	settingsFont = TTF_OpenFont( "fonts/settings font.ttf", SETTINGS_FONT_SIZE );
-	if (settingsFont == NULL) {
-		printf("Failed to load settings font! SDL_ttf Error: %s\n", TTF_GetError());
+	optionsFont = TTF_OpenFont( "fonts/settings font.ttf", OPTIONS_FONT_SIZE );
+	if (optionsFont == NULL) {
+		printf("Failed to load settings options font! SDL_ttf Error: %s\n", TTF_GetError());
 		success = false;
+	}
+
+	if (success) {
+		settingsheaderFont = TTF_OpenFont( "fonts/settings font.ttf", SETTINGS_HEADER_FONT_SIZE );
+		if (settingsheaderFont == NULL) {
+			printf("Failed to load settings header font! SDL_ttf Error: %s\n", TTF_GetError());
+			success = false;
+		}
 	}
 
 	if (success) {
@@ -95,7 +115,14 @@ bool Settings::loadMedia() {
 		SHOOT_KEY_CODE = codes[SHOOT_KEY];
 	}
 
+	if (success) {
+		success = settingsHeader[0].setText("Player name");
+		success = settingsHeader[1].setText("Controls");
+	}
+
 	if (success) success = settingsTexture.loadFromFile("sprites/settings.png");
+
+	if (success) success = settingsTextField.loadMedia();
 
 	return success;
 }
@@ -103,14 +130,17 @@ bool Settings::loadMedia() {
 void Settings::handleEvent(SDL_Event &e) {
 	if (e.type == SDL_KEYDOWN) {
 		if (enteredOption != TOTAL_KEYS) {
-			setKey(enteredOption, e.key.keysym.sym);
-			enteredOption = TOTAL_KEYS;
+			if (e.key.keysym.sym == SDLK_ESCAPE) enteredOption = TOTAL_KEYS;
+			else {
+				setKey(enteredOption, e.key.keysym.sym);
+				enteredOption = TOTAL_KEYS;
 
-			std::vector<int> codes = getKeys();
-			settingsOptions[UP_KEY].setText("UP       " + std::string(SDL_GetKeyName(static_cast<SDL_Keycode>(codes[UP_KEY]))));
-			settingsOptions[LEFT_KEY].setText("LEFT     " + std::string(SDL_GetKeyName(static_cast<SDL_Keycode>(codes[LEFT_KEY]))));
-			settingsOptions[RIGHT_KEY].setText("RIGHT   " + std::string(SDL_GetKeyName(static_cast<SDL_Keycode>(codes[RIGHT_KEY]))));
-			settingsOptions[SHOOT_KEY].setText("SHOOT   " + std::string(SDL_GetKeyName(static_cast<SDL_Keycode>(codes[SHOOT_KEY]))));
+				std::vector<int> codes = getKeys();
+				settingsOptions[UP_KEY].setText("UP       " + std::string(SDL_GetKeyName(static_cast<SDL_Keycode>(codes[UP_KEY]))));
+				settingsOptions[LEFT_KEY].setText("LEFT     " + std::string(SDL_GetKeyName(static_cast<SDL_Keycode>(codes[LEFT_KEY]))));
+				settingsOptions[RIGHT_KEY].setText("RIGHT   " + std::string(SDL_GetKeyName(static_cast<SDL_Keycode>(codes[RIGHT_KEY]))));
+				settingsOptions[SHOOT_KEY].setText("SHOOT   " + std::string(SDL_GetKeyName(static_cast<SDL_Keycode>(codes[SHOOT_KEY]))));
+			}
 		}
 		else {
 			switch( e.key.keysym.sym ) {
@@ -150,10 +180,15 @@ void Settings::render() {
 
 	renderOptionHighlighter();
 
+	settingsHeader[1].setPosition(offsetX + SCREEN_WIDTH / 2 + OPTIONS_START_X - 20, OPTIONS_START_Y - 50);
+	settingsHeader[1].render();
+
 	for (int i = 0; i < TOTAL_KEYS; i++) {
 		settingsOptions[i].setPosition(offsetX + SCREEN_WIDTH / 2 + OPTIONS_START_X, OPTIONS_START_Y + OPTIONS_HEIGHT * i);
 		settingsOptions[i].render();
 	}
+
+	renderThinBorder();
 
 	if (enteredOption != TOTAL_KEYS) settingsOptions[enteredOption].renderBorder();
 }
@@ -172,10 +207,16 @@ void Settings::renderOptionHighlighter() {
 	settingsOptions[currentSelectedOption].renderHighlighter();
 }
 
+void Settings::renderThinBorder() {
+	SDL_SetRenderDrawColor(gRenderer, 0xAA, 0xAA, 0xAA, 0xFF);
+	SDL_Rect optionThinBorderRect = {offsetX + SCREEN_WIDTH / 2 + OPTIONS_START_X - 30, OPTIONS_START_Y, SETTINGS_THIN_BORDER_WIDTH, OPTIONS_HEIGHT * TOTAL_KEYS - 6};
+	SDL_RenderFillRect(gRenderer, &optionThinBorderRect);
+}
+
 void Settings::close() {
 	//Free global font
-	TTF_CloseFont( settingsFont );
-	settingsFont = NULL;
+	TTF_CloseFont( optionsFont );
+	optionsFont = NULL;
 	for (int i = 0; i < TOTAL_KEYS; i++)
 		settingsOptions[i].close();
 }

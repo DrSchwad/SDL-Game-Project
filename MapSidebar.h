@@ -54,12 +54,16 @@ MapSidebar::MapSidebar(std::string mode, int level, Color backgroundColor) : mod
 	progress = 0;
 	score = 0;
 
-	std::ifstream leaderboardFile(std::string("data/leaderboard.txt"));
-	if (mode == "dodge") {
+	if (mode == "training") {
+		score = -1;
+		highestScore = -1;
+	}
+	else if (mode == "dodge") {
+		std::ifstream leaderboardFile(std::string("data/dodge leaderboard.txt"));
 		for (int i = 0; i < level; i++) leaderboardFile >> highestScore;
 		if (!(leaderboardFile >> highestScore)) highestScore = -1;
+		leaderboardFile.close();
 	}
-	leaderboardFile.close();
 }
 
 bool MapSidebar::loadMedia() {
@@ -129,9 +133,9 @@ void MapSidebar::died() {
 }
 
 void MapSidebar::finished() {
-	std::ifstream iLeaderboardFile(std::string("data/leaderboard.txt"));
-
 	if (mode == "dodge") {
+		std::ifstream iLeaderboardFile(std::string("data/dodge leaderboard.txt"));
+		
 		std::vector<double> scores(TOTAL_DODGE_LEVELS);
 		for (int i = 0; i < TOTAL_DODGE_LEVELS; i++) {
 			if (!(iLeaderboardFile >> scores[i])) scores[i] = -1;
@@ -143,7 +147,7 @@ void MapSidebar::finished() {
 
 		iLeaderboardFile.close();
 
-		std::ofstream oLeaderboardFile(std::string("data/leaderboard.txt"));
+		std::ofstream oLeaderboardFile(std::string("data/dodge leaderboard.txt"));
 		std::string scoreStr = "";
 		for (int i = 0; i < TOTAL_DODGE_LEVELS; i++) scoreStr += std::to_string(scores[i]) + " ";
 		oLeaderboardFile << scoreStr;
@@ -191,8 +195,8 @@ void MapSidebar::render() {
 
 	std::string scoreText, hScoreText;
 	if (mode == "training") {
-		scoreText = std::to_string(int(score));
-		hScoreText = std::to_string(int(highestScore));
+		scoreText = "-";
+		hScoreText = "-";
 	}
 	else if (mode == "dodge") {
 		scoreText = to_string_with_precision<double>(score, 2) + "s";

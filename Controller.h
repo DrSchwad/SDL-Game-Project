@@ -74,7 +74,7 @@ void Controller::handleEvent(SDL_Event &e) {
 		case MENU:
 			menu.handleEvent(e);
 
-			if (menu.getEnteredOption() != TOTAL_OPTIONS) {
+			if (menu.getEnteredOption() != TOTAL_OPTIONS && menu.getEnteredOption() != LEADERBOARD_OPTION) {
 				isWindowsMoving = true;
 				menu.deltaX = -10;
 				menu.offsetX += menu.deltaX;

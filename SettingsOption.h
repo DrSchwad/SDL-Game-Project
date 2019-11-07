@@ -1,5 +1,6 @@
-TTF_Font *settingsFont = NULL;
+TTF_Font *optionsFont = NULL;
 SDL_Color settingsTextColor = { 0xFF, 0xFF, 0xFF };
+const int SETTINGS_THIN_BORDER_WIDTH = 2;
 const int SETTINGS_BORDER_WIDTH = 10;
 const int SETTINGS_BORDER_HEIGHT = 44;
 const int SETTINGS_BACKGROUND_WIDTH = 250;
@@ -26,7 +27,7 @@ SettingsOption::SettingsOption() {
 }
 
 bool SettingsOption::setText(std::string str) {
-	return optionTextTexture.loadFromRenderedText(str, settingsTextColor, settingsFont);
+	return optionTextTexture.loadFromRenderedText(str, settingsTextColor, optionsFont);
 }
 
 void SettingsOption::setPosition(int x, int y) {
@@ -42,7 +43,7 @@ void SettingsOption::renderHighlighter() {
 	SDL_SetRenderDrawColor(gRenderer, 38, 44, 58, 0xFF);
 	highligherCurrentWidth += highligherDeltaWidth;
 	if (highligherCurrentWidth > SETTINGS_BACKGROUND_WIDTH) highligherCurrentWidth = SETTINGS_BACKGROUND_WIDTH;
-	SDL_Rect optionBackgroundRect = {posX - 30 + SETTINGS_BORDER_WIDTH, posY, highligherCurrentWidth, SETTINGS_BORDER_HEIGHT};
+	SDL_Rect optionBackgroundRect = {posX - 30 + SETTINGS_THIN_BORDER_WIDTH, posY, highligherCurrentWidth, SETTINGS_BORDER_HEIGHT};
 	SDL_RenderFillRect(gRenderer, &optionBackgroundRect);
 }
 

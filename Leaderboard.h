@@ -59,7 +59,7 @@ void Leaderboard::render() {
 	titleTexture.loadFromRenderedText("DODGE MODE", leaderboardColor, titleFont);
 	titleTexture.render(SCREEN_WIDTH / 2 + 100, 100);
 
-	std::ifstream leaderboardFile(std::string("data/leaderboard.txt"));
+	std::ifstream leaderboardFile(std::string("data/dodge leaderboard.txt"));
 
 	for (int i = 0; i < TOTAL_DODGE_LEVELS; i++) {
 		levelTextTexture.loadFromRenderedText("LEVEL " + std::to_string(i + 1), leaderboardColor, levelTextFont);

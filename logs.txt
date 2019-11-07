@@ -1,4 +1,1 @@
 Unable to load image backgrounds/dodge1.png! SDL_image Error: Couldn't open backgrounds/dodge1.png
-Unable to load image backgrounds/dodge2.png! SDL_image Error: Couldn't open backgrounds/dodge2.png
-Unable to load image backgrounds/dodge1.png! SDL_image Error: Couldn't open backgrounds/dodge1.png
-Unable to load image backgrounds/dodge2.png! SDL_image Error: Couldn't open backgrounds/dodge2.png

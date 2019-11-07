@@ -13,6 +13,8 @@ class Dodge {
 	private:
 		Map map;
 		int level;
+		Color blockColor;
+		Color acidColor;
 };
 
 Dodge::Dodge() {
@@ -20,7 +22,9 @@ Dodge::Dodge() {
 	deltaX = 0;
 	goBackToMenu = false;
 	level = 0;
-	map = Map("dodge", level, {{RECTANGULAR_BOX, 0, -60, 0, 0}}, {25, 51, 66, 0xFF}, {139, 224, 72, 0xFF});
+	blockColor = {25, 51, 66, 0xFF};
+	acidColor = {0xFF, 0x69, 0x61, 0xFF};
+	map = Map("dodge", level, {{RECTANGULAR_BOX, 0, -60, 0, 0}}, blockColor, acidColor);
 	map.setBackground({34, 82, 94, 0xFF});
 }
 
@@ -33,7 +37,7 @@ bool Dodge::loadMedia() {
 
 void Dodge::changeLevel(int delta) {
 	level = (level + delta + TOTAL_DODGE_LEVELS) % TOTAL_DODGE_LEVELS;
-	map = Map("dodge", level, {{RECTANGULAR_BOX, 0, -60, 0, 0}}, {25, 51, 66, 0xFF}, {139, 224, 72, 0xFF});
+	map = Map("dodge", level, {{RECTANGULAR_BOX, 0, -60, 0, 0}}, blockColor, acidColor);
 	map.setBackground({34, 82, 94, 0xFF});
 	map.loadMedia();
 }
