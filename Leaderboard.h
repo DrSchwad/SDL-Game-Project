@@ -14,6 +14,7 @@ class Leaderboard {
 		TTF_Font *titleFont;
 		TTF_Font *levelTextFont;
 		TTF_Font *scoreCounterFont;
+		LTexture nameTexture;
 		LTexture titleTexture;
 		LTexture levelTextTexture;
 		LTexture scoreCounterTexture;
@@ -57,19 +58,23 @@ void Leaderboard::render() {
 
 	// Render texts
 	titleTexture.loadFromRenderedText("DODGE MODE", leaderboardColor, titleFont);
-	titleTexture.render(SCREEN_WIDTH / 2 + 100, 100);
+	titleTexture.render(SCREEN_WIDTH / 2 + 40, 100);
 
 	std::ifstream leaderboardFile(std::string("data/dodge leaderboard.txt"));
 
 	for (int i = 0; i < TOTAL_DODGE_LEVELS; i++) {
 		levelTextTexture.loadFromRenderedText("LEVEL " + std::to_string(i + 1), leaderboardColor, levelTextFont);
-		levelTextTexture.render(SCREEN_WIDTH / 2 + 200, 170 + i * 70);
+		levelTextTexture.render(SCREEN_WIDTH / 2 + 80, 170 + i * 70);
 
+		std::string name;
+		if (!(leaderboardFile >> name)) name = "UNKNOWN";
 		double score;
 		if (!(leaderboardFile >> score)) score = -1;
+		nameTexture.loadFromRenderedText(name, leaderboardColor, scoreCounterFont);
 		if (score >= 0) scoreCounterTexture.loadFromRenderedText(to_string_with_precision<double>(score, 2) + "s", leaderboardColor, scoreCounterFont);
 		else scoreCounterTexture.loadFromRenderedText("-", leaderboardColor, scoreCounterFont);
-		scoreCounterTexture.render(SCREEN_WIDTH / 2 + 300, 170 + i * 70);
+		nameTexture.render(SCREEN_WIDTH / 2 + 120, 190 + i * 70);
+		scoreCounterTexture.render(SCREEN_WIDTH / 2 + 450, 190 + i * 70);
 	}
 
 	leaderboardFile.close();

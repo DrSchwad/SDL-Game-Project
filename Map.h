@@ -36,6 +36,7 @@ class Map {
 		Color blockColor, acidColor;
 		Hero hero;
 		MapSidebar mapSidebar;
+		Popup popup;
 };
 
 Map::Map() {}
@@ -44,10 +45,12 @@ Map::Map(std::string _mode, int _level, std::vector<CollisionArea> _collisionAre
 	level = _level;
 	currentScore = 0;
 	previousTime = -1;
+	if (mode == "shoot") hero = Hero(true);
 
 	Color sidebarColor;
 	if (_mode == "training") sidebarColor = {21, 24, 38, 0xFF};
 	else if (_mode == "dodge") sidebarColor = {17, 44, 57, 0xFF};
+	else if (_mode == "shoot") sidebarColor = {17, 44, 57, 0xFF};
 	mapSidebar = MapSidebar(mode, level, sidebarColor);
 	isGameOver = false;
 	isLevelFinished = false;
@@ -73,6 +76,8 @@ Map::Map(std::string _mode, int _level, std::vector<CollisionArea> _collisionAre
 	collisionAreas.push_back({RECTANGULAR_BOX, LEVEL_WIDTH, 0, LEVEL_WIDTH, LEVEL_HEIGHT}); // Right
 	collisionAreas.push_back({RECTANGULAR_BOX, 0, 0, LEVEL_WIDTH, 0}); // Top
 	collisionAreas.push_back({RECTANGULAR_BOX, 0, LEVEL_HEIGHT, LEVEL_WIDTH, LEVEL_HEIGHT}); // Bottom
+
+	popup = Popup("Game Over", "Restarting level");
 }
 
 void Map::setBackground(Color color) {
@@ -89,6 +94,7 @@ bool Map::loadMedia() {
 	if (success) success = mapSidebar.loadMedia();
 	if (success) success = Block::loadMedia();
 	if (success) success = hero.loadMedia();
+	if (success) success = popup.loadMedia();
 
 	return success;
 }
@@ -230,15 +236,11 @@ void Map::handleEvent(SDL_Event &e) {
 void Map::move() {
 	for (Block &b : blocks) b.move(hero.isStanding(b), hero.getX(), hero.getY());
 	hero.setObstacles(collisionAreas, blocks, acids, spikes);
-	hero.move();
+	double delta_score;
+	hero.move(delta_score);
+	mapSidebar.updateScore(delta_score);
 
-	if (hero.isDead) {
-		mapSidebar.died();
-		isGameOver = mapSidebar.isGameOver();
-		SDL_Delay(1000);
-		hero.reset();
-	}
-	else if (hero.isLevelFinished) {
+	if (!hero.isDead && hero.isLevelFinished) {
 		isLevelFinished = hero.isLevelFinished;
 		mapSidebar.finished();
 	}
@@ -255,6 +257,13 @@ void Map::render(int offsetX) {
 			mapSidebar.updateProgress(int(100.0 * (hero.getX() + 50) / LEVEL_WIDTH));
 
 			if (previousTime != -1) mapSidebar.updateScore((SDL_GetTicks() - previousTime) / 1000.0);
+			previousTime = SDL_GetTicks();
+		}
+		else if (previousTime != -1) previousTime = -1; // When map is losing focus
+	}
+	else if (mode == "shoot") {
+		if (offsetX == 0) { // If map is in full focuss
+			if (previousTime != -1) mapSidebar.updateTime((SDL_GetTicks() - previousTime) / 1000.0);
 			previousTime = SDL_GetTicks();
 		}
 		else if (previousTime != -1) previousTime = -1; // When map is losing focus
@@ -295,6 +304,15 @@ void Map::render(int offsetX) {
 	// Render hero
 	if (hero.isStanding()) hero.renderShadow(offsetX, clipOffset);
 	hero.render(offsetX, clipOffset);
+
+	if (hero.isDead) {
+		mapSidebar.died();
+		isGameOver = mapSidebar.isGameOver();
+		if (isGameOver) popup.render();
+		SDL_RenderPresent( gRenderer );
+		SDL_Delay(1000);
+		hero.reset();
+	}
 }
 
 void Map::reset() {

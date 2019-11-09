@@ -4,10 +4,11 @@
 
 const int SETTINGS_HEADER_FONT_SIZE = 20;
 const int OPTIONS_FONT_SIZE = 28;
-const int OPTIONS_START_X = 220, OPTIONS_START_Y = 220;
+const int OPTIONS_START_X = 220, OPTIONS_START_Y = 250;
 const int OPTIONS_HEIGHT = 50;
 
 enum SettingsKey {
+	NAME,
 	UP_KEY,
 	LEFT_KEY,
 	RIGHT_KEY,
@@ -50,18 +51,17 @@ Settings::Settings() {
 	enteredOption = TOTAL_KEYS;
 	goBackToMenu = false;
 
-	settingsTextField.setBackgroundColor({});
-	settingsTextField.setTextColor({});
-	settingsTextField.setHintTextColor({0xCC, });
+	settingsTextField.setBackgroundColor({38, 44, 58});
+	settingsTextField.setTextColor({0xFF, 0xFF, 0xFF});
+	settingsTextField.setHintTextColor({0xCC, 0xCC, 0xCC});
 	settingsTextField.setHintText("Enter your name");
-	settingsTextField.setPosition(int x, int y);
 }
 
 std::vector<int> Settings::getKeys() {
 	std::vector<int> codes(TOTAL_KEYS);
 
 	std::ifstream iControlsFile(std::string("data/controls.txt"));
-	for (int i = 0; i < TOTAL_KEYS; i++) iControlsFile >> codes[i];
+	for (int i = 1; i < TOTAL_KEYS; i++) iControlsFile >> codes[i];
 	iControlsFile.close();
 
 	return codes;
@@ -69,11 +69,12 @@ std::vector<int> Settings::getKeys() {
 
 void Settings::setKey(SettingsKey key, SDL_Keycode keyCode) {
 	std::vector<int> codes = getKeys();
+	codes.insert(codes.begin(), 0);
 	codes[key] = keyCode;
 
 	std::ofstream oControlsFile(std::string("data/controls.txt"));
 	std::string codeStr = "";
-	for (int i = 0; i < TOTAL_KEYS; i++) codeStr += std::to_string(codes[i]) + " ";
+	for (int i = 1; i < TOTAL_KEYS; i++) codeStr += std::to_string(codes[i]) + " ";
 	oControlsFile << codeStr;
 	oControlsFile.close();
 
@@ -157,6 +158,9 @@ void Settings::handleEvent(SDL_Event &e) {
 					break;
 				case SDLK_ESCAPE:
 					goBackToMenu = true;
+					break;
+				default:
+					if (currentSelectedOption == NAME) settingsTextField.handleEvent(e);
 			}
 		}
 	}
@@ -178,13 +182,19 @@ void Settings::render() {
 
 	settingsTexture.render(offsetX + (SCREEN_WIDTH / 2 - settingsTexture.getWidth()) / 2, (SCREEN_HEIGHT - settingsTexture.getHeight()) / 2);
 
+	settingsTextField.setPosition(offsetX + SCREEN_WIDTH / 2 + OPTIONS_START_X, 130);
+	settingsTextField.render();
+
 	renderOptionHighlighter();
 
-	settingsHeader[1].setPosition(offsetX + SCREEN_WIDTH / 2 + OPTIONS_START_X - 20, OPTIONS_START_Y - 50);
+	settingsHeader[0].setPosition(offsetX + SCREEN_WIDTH / 2 + OPTIONS_START_X - 20, 90);
+	settingsHeader[0].render();
+
+	settingsHeader[1].setPosition(offsetX + SCREEN_WIDTH / 2 + OPTIONS_START_X - 20, OPTIONS_START_Y - 40);
 	settingsHeader[1].render();
 
-	for (int i = 0; i < TOTAL_KEYS; i++) {
-		settingsOptions[i].setPosition(offsetX + SCREEN_WIDTH / 2 + OPTIONS_START_X, OPTIONS_START_Y + OPTIONS_HEIGHT * i);
+	for (int i = 1; i < TOTAL_KEYS; i++) {
+		settingsOptions[i].setPosition(offsetX + SCREEN_WIDTH / 2 + OPTIONS_START_X, OPTIONS_START_Y + OPTIONS_HEIGHT * (i - 1));
 		settingsOptions[i].render();
 	}
 
@@ -204,12 +214,13 @@ void Settings::resetOptionHighlighter() {
 }
 
 void Settings::renderOptionHighlighter() {
-	settingsOptions[currentSelectedOption].renderHighlighter();
+	if (currentSelectedOption != NAME) settingsOptions[currentSelectedOption].renderHighlighter();
+	else settingsTextField.renderBorder();
 }
 
 void Settings::renderThinBorder() {
 	SDL_SetRenderDrawColor(gRenderer, 0xAA, 0xAA, 0xAA, 0xFF);
-	SDL_Rect optionThinBorderRect = {offsetX + SCREEN_WIDTH / 2 + OPTIONS_START_X - 30, OPTIONS_START_Y, SETTINGS_THIN_BORDER_WIDTH, OPTIONS_HEIGHT * TOTAL_KEYS - 6};
+	SDL_Rect optionThinBorderRect = {offsetX + SCREEN_WIDTH / 2 + OPTIONS_START_X - 30, OPTIONS_START_Y, SETTINGS_THIN_BORDER_WIDTH, OPTIONS_HEIGHT * (TOTAL_KEYS - 1) - 6};
 	SDL_RenderFillRect(gRenderer, &optionThinBorderRect);
 }
 

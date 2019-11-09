@@ -13,8 +13,10 @@ class MapSidebar {
 		bool loadMedia();
 		void updateProgress(int _progress);
 		void updateScore(double _score);
+		void updateTime(double secs);
 		void render();
 		void died();
+		std::string getName();
 		void finished();
 		bool isGameOver();
 		void reset();
@@ -25,6 +27,7 @@ class MapSidebar {
 		int progress;
 		double score;
 		double highestScore;
+		double secs;
 		Color backgroundColor;
 
 		// Text textures
@@ -50,6 +53,7 @@ MapSidebar::MapSidebar() {
 MapSidebar::MapSidebar(std::string mode, int level, Color backgroundColor) : mode(mode), level(level), backgroundColor(backgroundColor) {
 	if (mode == "training") lives = 1;
 	else if (mode == "dodge") lives = 3;
+	else if (mode == "shoot") lives = 3;
 
 	progress = 0;
 	score = 0;
@@ -60,9 +64,15 @@ MapSidebar::MapSidebar(std::string mode, int level, Color backgroundColor) : mod
 	}
 	else if (mode == "dodge") {
 		std::ifstream leaderboardFile(std::string("data/dodge leaderboard.txt"));
-		for (int i = 0; i < level; i++) leaderboardFile >> highestScore;
+		double scores; std::string names;
+		for (int i = 0; i < level; i++) leaderboardFile >> names, leaderboardFile >> scores;
+		leaderboardFile >> names;
 		if (!(leaderboardFile >> highestScore)) highestScore = -1;
 		leaderboardFile.close();
+	}
+	if (mode == "shoot") {
+		score = 0;
+		highestScore = -1;
 	}
 }
 
@@ -110,6 +120,7 @@ bool MapSidebar::loadMedia() {
 		std::string modeAndLevelTextString;
 		if (mode == "training") modeAndLevelTextString = "TRAINING MODE";
 		else if (mode == "dodge") modeAndLevelTextString = "DODGE MODE";
+		else if (mode == "shoot") modeAndLevelTextString = "SHOOT MODE";
 		modeAndLevelTextTexture.loadFromRenderedText(modeAndLevelTextString, menuSidebarColor, modeAndLevelFont);
 		scoreTextTexture.loadFromRenderedText("SCORE:", menuSidebarColor, scoreTextFont);
 		hScoreTextTexture.loadFromRenderedText("HIGHEST SCORE:", menuSidebarColor, scoreTextFont);
@@ -128,40 +139,64 @@ void MapSidebar::updateScore(double _score) {
 	score += _score;
 }
 
+void MapSidebar::updateTime(double _secs) {
+	secs += _secs;
+}
+
 void MapSidebar::died() {
 	lives--;
+}
+
+std::string MapSidebar::getName() {
+	std::string name = "";
+	std::ifstream nameFile(std::string("data/name.txt"));
+	nameFile >> name;
+	nameFile.close();
+	return name;
 }
 
 void MapSidebar::finished() {
 	if (mode == "dodge") {
 		std::ifstream iLeaderboardFile(std::string("data/dodge leaderboard.txt"));
-		
+
+		std::vector<std::string> names(TOTAL_DODGE_LEVELS);
 		std::vector<double> scores(TOTAL_DODGE_LEVELS);
 		for (int i = 0; i < TOTAL_DODGE_LEVELS; i++) {
+			if (!(iLeaderboardFile >> names[i])) names[i] = "UNKNOWN";
 			if (!(iLeaderboardFile >> scores[i])) scores[i] = -1;
 		}
 
-		if (scores[level] >= 0) scores[level] = std::min(scores[level], score);
-		else scores[level] = score;
+		if (scores[level] < 0 || score < scores[level]) scores[level] = score, names[level] = getName();
 		highestScore = scores[level];
 
 		iLeaderboardFile.close();
 
 		std::ofstream oLeaderboardFile(std::string("data/dodge leaderboard.txt"));
-		std::string scoreStr = "";
-		for (int i = 0; i < TOTAL_DODGE_LEVELS; i++) scoreStr += std::to_string(scores[i]) + " ";
-		oLeaderboardFile << scoreStr;
+		std::string writeStr = "";
+		for (int i = 0; i < TOTAL_DODGE_LEVELS; i++) {
+			writeStr += names[i] + " " + std::to_string(scores[i]) + "\n";
+		}
+		oLeaderboardFile << writeStr;
 		oLeaderboardFile.close();
+	}
+	else if (mode == "shoot") {
+		if (score > highestScore) {
+			std::ofstream oLeaderboardFile(std::string("data/dodge leaderboard.txt"));
+			std::string writeStr = getName() + " " + std::to_string((int)score) + "\n";
+			oLeaderboardFile << writeStr;
+			oLeaderboardFile.close();
+		}
 	}
 }
 
 bool MapSidebar::isGameOver() {
-	return lives == 0;
+	return lives == 0 || secs >= 60;
 }
 
 void MapSidebar::reset() {
 	if (mode == "training") lives = 1;
 	else if (mode == "dodge") lives = 3;
+	else if (mode == "shoot") lives = 3;
 
 	progress = 0;
 	score = 0;
@@ -203,6 +238,12 @@ void MapSidebar::render() {
 
 		hScoreText = "-";
 		if (highestScore >= 0) hScoreText = to_string_with_precision<double>(highestScore, 2) + "s";
+	}
+	else if (mode == "shoot") {
+		scoreText = std::to_string((int)score);
+
+		hScoreText = "-";
+		if (highestScore >= 0) std::to_string((int)highestScore);
 	}
 	scoreCounterTexture.loadFromRenderedText(scoreText, menuSidebarColor, scoreCounterFont);
 	hScoreCounterTexture.loadFromRenderedText(hScoreText, menuSidebarColor, scoreCounterFont);

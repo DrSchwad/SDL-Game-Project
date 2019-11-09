@@ -12,10 +12,12 @@ std::string to_string_with_precision(const T a_value, const int n = 6) {
 
 #include "CollisionArea.h"
 #include "Color.h"
+#include "Popup.h"
 #include "Map.h"
 #include "Menu.h"
 #include "Training.h"
 #include "Dodge.h"
+#include "Shoot.h"
 #include "Settings.h"
 #include "Leaderboard.h"
 #include "Quit.h"
@@ -25,7 +27,6 @@ enum GameMode {
 	TRAINING,
 	DODGE,
 	SHOOT,
-	ARCADE,
 	LEADERBOARD,
 	SETTINGS
 };
@@ -42,6 +43,7 @@ class Controller {
 		Menu menu;
 		Training training;
 		Dodge dodge;
+		Shoot shoot;
 		Settings settings;
 		Leaderboard leaderboard;
 		Quit quit;
@@ -61,6 +63,7 @@ bool Controller::loadMedia() {
 	if (!menu.loadMedia()) success = false;
 	if (!training.loadMedia()) success = false;
 	if (!dodge.loadMedia()) success = false;
+	if (!shoot.loadMedia()) success = false;
 	if (!settings.loadMedia()) success = false;
 	if (!leaderboard.loadMedia()) success = false;
 	if (!quit.loadMedia()) success = false;
@@ -92,8 +95,12 @@ void Controller::handleEvent(SDL_Event &e) {
 
 						currentGameMode = DODGE;
 						break;
-					case SHOOT_OPTION: break;
-					case ARCADE_OPTION: break;
+					case SHOOT_OPTION:
+						shoot.deltaX = -10;
+						shoot.offsetX += shoot.deltaX;
+
+						currentGameMode = SHOOT;
+						break;
 					case LEADERBOARD_OPTION: break;
 					case SETTINGS_OPTION:
 						settings.deltaX = -10;
@@ -142,8 +149,18 @@ void Controller::handleEvent(SDL_Event &e) {
 				dodge.moveOffset();
 			}
 			break;
-		case SHOOT: break;
-		case ARCADE: break;
+		case SHOOT:
+			shoot.handleEvent(e);
+
+			if (shoot.goBackToMenu) {
+				isWindowsMoving = true;
+				menu.deltaX = 10;
+				menu.moveOffset();
+
+				shoot.deltaX = 10;
+				shoot.moveOffset();
+			}
+			break;
 		case LEADERBOARD: break;
 		case SETTINGS:
 			settings.handleEvent(e);
@@ -176,8 +193,9 @@ void Controller::render() {
 					dodge.render();
 					menu.renderLevelIndicator(dodge.getLevel());
 					break;
-				case SHOOT_OPTION: break;
-				case ARCADE_OPTION: break;
+				case SHOOT_OPTION:
+					shoot.render();
+					break;
 				case LEADERBOARD_OPTION:
 					leaderboard.render();
 					break;
@@ -228,8 +246,25 @@ void Controller::render() {
 			}
 
 			break;
-		case SHOOT: break;
-		case ARCADE: break;
+		case SHOOT:
+			if (isWindowsMoving) shoot.moveOffset();
+			shoot.render();
+
+			if (isWindowsMoving) {
+				menu.moveOffset();
+				menu.render();
+
+				if ((menu.offsetX == -SCREEN_WIDTH / 2 || menu.offsetX == 0) &&
+					(shoot.offsetX == 0 || shoot.offsetX == SCREEN_WIDTH / 2)) {
+					isWindowsMoving = false;
+					if (shoot.goBackToMenu) {
+						currentGameMode = MENU;
+						shoot.goBackToMenu = false;
+					}
+				}
+			}
+
+			break;
 		case LEADERBOARD: break;
 		case SETTINGS:
 			if (isWindowsMoving) settings.moveOffset();
@@ -257,5 +292,6 @@ void Controller::close() {
 	menu.close();
 	training.close();
 	dodge.close();
+	shoot.close();
 	settings.close();
 }

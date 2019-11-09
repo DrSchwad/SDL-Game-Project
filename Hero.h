@@ -1,3 +1,5 @@
+#include "Bullet.h"
+
 // Stance animation
 const int STANCE_ANIMATION_FRAMES = 4;
 const int STANCE_ANIMATION_UNIT = 4;
@@ -11,16 +13,18 @@ const int JUPM_UP_STATES = 13, JUMP_STILL_STATES = 5;
 const int VERTICAL_VELOCITY = 8, HORIZONTAL_VELOCITY = 4;
 const int FAST_DOWN_VELOCITY = 14, SLOW_DOWN_STATES = 10;
 
+const int MAX_ANGLE = 60;
+
 class Hero {
 	public:
-		Hero();
+		Hero(bool _shootEnabled = false);
 		void setObstacles(std::vector<CollisionArea> &_collisionAreas, std::vector<Block> &_blocks, std::vector<Acid> &_acids, std::vector<Spike> &_spikes);
 		bool loadMedia();
 		void setInitialPosition(int x, int y);
 		int& getX();
 		int& getY();
 		void handleEvent(SDL_Event &e);
-		void move();
+		void move(double &score);
 		bool isStanding();
 		bool isStanding(Block &b);
 		void render(int offsetX, int clipOffset);
@@ -61,9 +65,15 @@ class Hero {
 		std::vector<Block> blocks;
 		std::vector<Acid> acids;
 		std::vector<Spike> spikes;
+		std::vector<Bullet> bullets;
+
+		// shoot mode
+		bool shootEnabled;
+		int angleState;
+		double angle;
 };
 
-Hero::Hero() {
+Hero::Hero(bool _shootEnabled) {
 	heroStanceFrame = 0;
 	heroRunningFrame = 0;
 
@@ -82,6 +92,9 @@ Hero::Hero() {
 	collisionArea = CollisionArea(RECTANGULAR_BOX, posX + (width - collutionWidth) / 2, posY, posX + (width + collutionWidth) / 2, posY + height);
 	isDead = false;
 	isLevelFinished = false;
+
+	shootEnabled = _shootEnabled;
+	angleState = 0;
 }
 
 void Hero::setObstacles(std::vector<CollisionArea> &_collisionAreas, std::vector<Block> &_blocks, std::vector<Acid> &_acids, std::vector<Spike> &_spikes) {
@@ -106,7 +119,11 @@ bool Hero::loadMedia() {
 	bool success = true;
 
 	if (success) {
-		if (!heroStanceRightSpriteSheetTexture.loadFromFile( "sprites/Hero Stance Right White.png") ) {
+		if (!shootEnabled && !heroStanceRightSpriteSheetTexture.loadFromFile( "sprites/Hero Stance Right White.png") ) {
+			printf( "Failed to load hero stance right animation texture!\n" );
+			success = false;
+		}
+		if (shootEnabled && !heroStanceRightSpriteSheetTexture.loadFromFile( "sprites/Hero Shoot Stance Right White.png") ) {
 			printf( "Failed to load hero stance right animation texture!\n" );
 			success = false;
 		}
@@ -122,11 +139,15 @@ bool Hero::loadMedia() {
 	}
 
 	if (success) {
-		if (!heroStanceLeftSpriteSheetTexture.loadFromFile( "sprites/Hero Stance Left White.png") ) {
+		if (!shootEnabled && !heroStanceLeftSpriteSheetTexture.loadFromFile( "sprites/Hero Stance Left White.png") ) {
 			printf( "Failed to load hero stance left animation texture!\n" );
 			success = false;
 		}
-		else {
+		if (shootEnabled && !heroStanceLeftSpriteSheetTexture.loadFromFile( "sprites/Hero Shoot Stance Left White.png") ) {
+			printf( "Failed to load hero stance left animation texture!\n" );
+			success = false;
+		}
+		if (success) {
 			// Set sprite clips
 			for (int i = 0; i < STANCE_ANIMATION_FRAMES; i++) {
 				heroStanceLeftSpriteClips[i].x = width * (STANCE_ANIMATION_FRAMES - 1 - i);
@@ -138,11 +159,15 @@ bool Hero::loadMedia() {
 	}
 
 	if (success) {
-		if (!heroRunningRightSpriteSheetTexture.loadFromFile( "sprites/Hero Running Right White.png") ) {
+		if (!shootEnabled && !heroRunningRightSpriteSheetTexture.loadFromFile( "sprites/Hero Running Right White.png") ) {
 			printf( "Failed to load hero running right animation texture!\n" );
 			success = false;
 		}
-		else {
+		if (shootEnabled && !heroRunningRightSpriteSheetTexture.loadFromFile( "sprites/Hero Shoot Running Right White.png") ) {
+			printf( "Failed to load hero running right animation texture!\n" );
+			success = false;
+		}
+		if (success) {
 			// Set sprite clips
 			for (int i = 0; i < RUNNING_ANIMATION_FRAMES; i++) {
 				heroRunningRightSpriteClips[i].x = width * i;
@@ -154,7 +179,11 @@ bool Hero::loadMedia() {
 	}
 
 	if (success) {
-		if (!heroRunningLeftSpriteSheetTexture.loadFromFile( "sprites/Hero Running Left White.png") ) {
+		if (!shootEnabled && !heroRunningLeftSpriteSheetTexture.loadFromFile( "sprites/Hero Running Left White.png") ) {
+			printf( "Failed to load hero running left animation texture!\n" );
+			success = false;
+		}
+		if (shootEnabled && !heroRunningLeftSpriteSheetTexture.loadFromFile( "sprites/Hero Shoot Running Left White.png") ) {
 			printf( "Failed to load hero running left animation texture!\n" );
 			success = false;
 		}
@@ -197,6 +226,21 @@ void Hero::handleEvent(SDL_Event &e) {
 				heroRunningFrame = 0;
 			}
 		}
+		else if (e.key.keysym.sym == SHOOT_KEY_CODE) {
+			if (shootEnabled) {
+				int x = posX + width / 2;
+				int y = posY + height / 3;
+				int len = 20;
+				double effectiveAngle;
+				if (direction == 0) effectiveAngle = angle;
+				else effectiveAngle = 180 - angle;
+				effectiveAngle = effectiveAngle / 180 * acos(-1);
+				int _x = x + cos(effectiveAngle) * len;
+				int _y = y + sin(effectiveAngle) * len;
+
+				bullets.push_back(Bullet(_x, _y, effectiveAngle));
+			}
+		}
 	}
 
 	if (e.type == SDL_KEYUP) {
@@ -223,7 +267,21 @@ bool Hero::isStanding(Block &b) {
 	return isStandingVar;
 }
 
-void Hero::move() {
+void Hero::move(double &score) {
+	if (shootEnabled) {
+		angleState = (angleState + 2) % (4 * MAX_ANGLE);
+		angle = angleState;
+		if (angleState <= MAX_ANGLE) angle = angleState;
+		else if (angleState <= 2 * MAX_ANGLE) angle = 2 * MAX_ANGLE - angleState;
+		else if (angleState <= 3 * MAX_ANGLE) angle = 2 * MAX_ANGLE - angleState;
+		else angle = angleState - 4 * MAX_ANGLE;
+
+		for (Bullet &b : bullets) b.move(score, collisionAreas, blocks, acids, spikes);
+		std::vector<Bullet> tmp = bullets;
+		bullets.clear();
+		for (Bullet &b : tmp) if (!b.isGone) bullets.push_back(b);
+	}
+
 	// If right arrow pressed, set right velocity
 	rightVelocity = (rightPressed ? HORIZONTAL_VELOCITY : 0);
 
@@ -335,6 +393,22 @@ void Hero::render(int offsetX, int clipOffset) {
 
 		//Cycle animation
 		if(heroRunningFrame / RUNNING_ANIMATION_UNIT >= RUNNING_ANIMATION_FRAMES) heroRunningFrame = 0;
+	}
+
+	if (shootEnabled) {
+		int x = posX + width / 2;
+		int y = posY + height / 3;
+		int len = 20;
+		double effectiveAngle;
+		if (direction == 0) effectiveAngle = angle;
+		else effectiveAngle = 180 - angle;
+		effectiveAngle = effectiveAngle / 180 * acos(-1);
+		int _x = x + cos(effectiveAngle) * len;
+		int _y = y + sin(effectiveAngle) * len;
+		SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
+		SDL_RenderDrawLine(gRenderer, offsetX + x, y, offsetX + _x, _y);
+
+		for (Bullet &b : bullets) b.render(offsetX);
 	}
 }
 

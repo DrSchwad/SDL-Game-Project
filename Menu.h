@@ -19,7 +19,6 @@ enum MenuOption {
 	TRAINING_OPTION,
 	DODGE_OPTION,
 	SHOOT_OPTION,
-	ARCADE_OPTION,
 	LEADERBOARD_OPTION,
 	SETTINGS_OPTION,
 	QUIT_OPTION,
@@ -73,7 +72,6 @@ bool Menu::loadMedia() {
 		success = menuButtons[TRAINING_OPTION].setText("TRAINING");
 		success = menuButtons[DODGE_OPTION].setText("DODGE");
 		success = menuButtons[SHOOT_OPTION].setText("SHOOT");
-		success = menuButtons[ARCADE_OPTION].setText("ARCADE");
 		success = menuButtons[LEADERBOARD_OPTION].setText("LEADERBOARD");
 		success = menuButtons[SETTINGS_OPTION].setText("SETTINGS");
 		success = menuButtons[QUIT_OPTION].setText("QUIT");
